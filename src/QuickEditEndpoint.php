@@ -47,7 +47,7 @@ final class QuickEditEndpoint extends BaseEndpoint
 		if (\method_exists($selectedEntity, $setter = 'set' . $property) === false) {
 			throw new \InvalidArgumentException(
 				'Entity "' . $class . '" with identifier "' . $id . '" can not be changed, '
-				. 'because setter "' . $setter . '" does not exist.'
+				. 'because setter "' . $setter . '" does not exist.',
 			);
 		}
 		try {
@@ -60,7 +60,7 @@ final class QuickEditEndpoint extends BaseEndpoint
 		} catch (\Throwable $e) {
 			throw new \InvalidArgumentException(
 				'Value for entity "' . $class . '" with identifier "' . $id . '" '
-				. 'can not be changed: ' . $e->getMessage()
+				. 'can not be changed: ' . $e->getMessage(),
 			);
 		}
 
@@ -81,7 +81,7 @@ final class QuickEditEndpoint extends BaseEndpoint
 					if ($entity !== null) {
 						throw new \InvalidArgumentException(
 							'The name "' . $name . '" is not unambiguous. '
-							. 'Entity "' . $entity . '" and "' . $meta->getName() . '" correspond to this name.'
+							. 'Entity "' . $entity . '" and "' . $meta->getName() . '" correspond to this name.',
 						);
 					}
 					$entity = $meta->getName();
