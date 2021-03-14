@@ -29,8 +29,13 @@ final class QuickEditEndpoint extends BaseEndpoint
 	}
 
 
-	public function actionDefault(string $entity, string $property, string $id, mixed $value, string $type = 'text'): void
-	{
+	public function actionDefault(
+		string $entity,
+		string $property,
+		string $id,
+		mixed $value,
+		string $type = 'text'
+	): void {
 		/** @var \Doctrine\ORM\Mapping\ClassMetadata $metadata */
 		$metadata = $this->getEntityClass($entity);
 		$class = $metadata->getName();
@@ -102,7 +107,7 @@ final class QuickEditEndpoint extends BaseEndpoint
 	}
 
 
-	private function valueNormalize(string $type, mixed $value): mixed
+	private function valueNormalize(string $type, mixed $value): float|bool|int|string
 	{
 		$type = self::TYPE_MAPPER[$type] ?? 'string';
 		if ($type === 'bool') {
@@ -114,10 +119,7 @@ final class QuickEditEndpoint extends BaseEndpoint
 		if ($type === 'int') {
 			return (int) $value;
 		}
-		if ($type === 'string') {
-			return (string) $value;
-		}
 
-		return $value;
+		return (string) $value;
 	}
 }
