@@ -13,19 +13,23 @@ use Doctrine\Persistence\Mapping\ClassMetadata;
 
 final class QuickEditEndpoint extends BaseEndpoint
 {
-	private EntityManagerInterface $entityManager;
+	private const TYPE_MAPPER = [
+		'text' => 'string',
+		'int' => 'int',
+		'integer' => 'int',
+		'float' => 'float',
+		'bool' => 'bool',
+		'boolean' => 'bool',
+	];
 
 
-	public function __construct(EntityManagerInterface $entityManager)
-	{
-		$this->entityManager = $entityManager;
+	public function __construct(
+		private EntityManagerInterface $entityManager,
+	) {
 	}
 
 
-	/**
-	 * @param mixed $value
-	 */
-	public function actionDefault(string $entity, string $property, string $id, $value): void
+	public function actionDefault(string $entity, string $property, string $id, mixed $value, string $type = 'text'): void
 	{
 		/** @var \Doctrine\ORM\Mapping\ClassMetadata $metadata */
 		$metadata = $this->getEntityClass($entity);
@@ -38,7 +42,7 @@ final class QuickEditEndpoint extends BaseEndpoint
 				->setMaxResults(1)
 				->getQuery()
 				->getOneOrNullResult();
-		} catch (NonUniqueResultException $e) {
+		} catch (NonUniqueResultException) {
 			throw new \InvalidArgumentException('Entity "' . $class . '" with identifier "' . $id . '" is not unique.');
 		}
 		if ($selectedEntity === null) {
@@ -56,11 +60,13 @@ final class QuickEditEndpoint extends BaseEndpoint
 				throw new \LogicException('Method "' . $setter . '" do not implement "@editable" annotation.');
 			}
 			$ref->setAccessible(true);
-			$ref->invoke($selectedEntity, $value);
+			$ref->invoke($selectedEntity, $this->valueNormalize($type, $value));
 		} catch (\Throwable $e) {
 			throw new \InvalidArgumentException(
 				'Value for entity "' . $class . '" with identifier "' . $id . '" '
 				. 'can not be changed: ' . $e->getMessage(),
+				$e->getCode(),
+				$e,
 			);
 		}
 
@@ -90,8 +96,28 @@ final class QuickEditEndpoint extends BaseEndpoint
 		}
 		try {
 			return $this->entityManager->getMetadataFactory()->getMetadataFor((string) $entity);
-		} catch (\Throwable $e) {
+		} catch (\Throwable) {
 			throw new \InvalidArgumentException('Class "' . $entity . '" is not valid Doctrine entity.');
 		}
+	}
+
+
+	private function valueNormalize(string $type, mixed $value): mixed
+	{
+		$type = self::TYPE_MAPPER[$type] ?? 'string';
+		if ($type === 'bool') {
+			return $value === 'true';
+		}
+		if ($type === 'float') {
+			return (float) $value;
+		}
+		if ($type === 'int') {
+			return (int) $value;
+		}
+		if ($type === 'string') {
+			return (string) $value;
+		}
+
+		return $value;
 	}
 }
