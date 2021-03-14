@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Baraja\QuickEdit;
 
 
+use Baraja\ServiceMethodInvoker;
 use Baraja\StructuredApi\BaseEndpoint;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
@@ -40,6 +41,7 @@ final class QuickEditEndpoint extends BaseEndpoint
 		$metadata = $this->getEntityClass($entity);
 		$class = $metadata->getName();
 		try {
+			/** @var object|null $selectedEntity */
 			$selectedEntity = (new EntityRepository($this->entityManager, $metadata))
 				->createQueryBuilder('e')
 				->where('e.id = :id')
@@ -59,13 +61,20 @@ final class QuickEditEndpoint extends BaseEndpoint
 				. 'because setter "' . $setter . '" does not exist.',
 			);
 		}
+		$value = $this->valueNormalize($type, $value);
 		try {
 			$ref = new \ReflectionMethod($selectedEntity, $setter);
 			if (stripos((string) $ref->getDocComment(), '@editable') === false) {
 				throw new \LogicException('Method "' . $setter . '" do not implement "@editable" annotation.');
 			}
 			$ref->setAccessible(true);
-			$ref->invoke($selectedEntity, $this->valueNormalize($type, $value));
+			$param = $ref->getParameters()[0] ?? throw new \InvalidArgumentException('First input argument for method "' . $setter . '" is required.');
+			if (isset($ref->getParameters()[1])) {
+				throw new \InvalidArgumentException('Method "' . $setter . '" implements too many arguments. Did you use one argument only?');
+			}
+			(new ServiceMethodInvoker)->invoke($selectedEntity, $setter, [
+				$param->getName() => $value,
+			]);
 		} catch (\Throwable $e) {
 			throw new \InvalidArgumentException(
 				'Value for entity "' . $class . '" with identifier "' . $id . '" '
