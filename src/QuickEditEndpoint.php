@@ -85,6 +85,7 @@ final class QuickEditEndpoint extends BaseEndpoint
 		}
 
 		$this->entityManager->flush();
+		$this->flashMessage('Property "' . $property . '" has been changed.', 'success');
 		$this->sendOk();
 	}
 
