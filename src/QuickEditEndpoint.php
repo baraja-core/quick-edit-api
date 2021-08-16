@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Baraja\QuickEdit;
 
 
+use Baraja\QuickEdit\Attribute\Editable;
 use Baraja\ServiceMethodInvoker;
 use Baraja\StructuredApi\BaseEndpoint;
 use Doctrine\ORM\EntityManagerInterface;
@@ -64,8 +65,11 @@ final class QuickEditEndpoint extends BaseEndpoint
 		$value = $this->valueNormalize($type, $value);
 		try {
 			$ref = new \ReflectionMethod($selectedEntity, $setter);
-			if (stripos((string) $ref->getDocComment(), '@editable') === false) {
-				throw new \LogicException('Method "' . $setter . '" do not implement "@editable" annotation.');
+			if (
+				$ref->getAttributes(Editable::class) === []
+				&& str_contains((string) $ref->getDocComment(), '@editable') === false // legacy annotation support
+			) {
+				throw new \LogicException('Method "' . $setter . '" do not implement #[Editable] attribute or "@editable" annotation.');
 			}
 			$ref->setAccessible(true);
 			$param = $ref->getParameters()[0] ?? throw new \InvalidArgumentException('First input argument for method "' . $setter . '" is required.');
