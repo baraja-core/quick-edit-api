@@ -56,7 +56,8 @@ final class QuickEditEndpoint extends BaseEndpoint
 		if ($selectedEntity === null) {
 			throw new \InvalidArgumentException('Entity "' . $class . '" with identifier "' . $id . '" does not exist.');
 		}
-		if (\method_exists($selectedEntity, $setter = 'set' . $property) === false) {
+		$setter = 'set' . $property;
+		if (\method_exists($selectedEntity, $setter) === false) {
 			throw new \InvalidArgumentException(
 				'Entity "' . $class . '" with identifier "' . $id . '" can not be changed, '
 				. 'because setter "' . $setter . '" does not exist.',
@@ -72,7 +73,10 @@ final class QuickEditEndpoint extends BaseEndpoint
 				throw new \LogicException('Method "' . $setter . '" do not implement #[Editable] attribute or "@editable" annotation.');
 			}
 			$ref->setAccessible(true);
-			$param = $ref->getParameters()[0] ?? throw new \InvalidArgumentException('First input argument for method "' . $setter . '" is required.');
+			$param = $ref->getParameters()[0] ?? null;
+			if ($param === null) {
+				throw new \InvalidArgumentException('First input argument for method "' . $setter . '" is required.');
+			}
 			if (isset($ref->getParameters()[1])) {
 				throw new \InvalidArgumentException('Method "' . $setter . '" implements too many arguments. Did you use one argument only?');
 			}
