@@ -36,7 +36,7 @@ final class QuickEditEndpoint extends BaseEndpoint
 		string $property,
 		string $id,
 		mixed $value,
-		string $type = 'text'
+		string $type = 'text',
 	): void {
 		/** @var \Doctrine\ORM\Mapping\ClassMetadata $metadata */
 		$metadata = $this->getEntityClass($entity);
