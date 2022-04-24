@@ -66,11 +66,20 @@ final class QuickEditEndpoint extends BaseEndpoint
 		$value = $this->valueNormalize($type, $value);
 		try {
 			$ref = new \ReflectionMethod($selectedEntity, $setter);
-			if (
-				$ref->getAttributes(Editable::class) === []
-				&& str_contains((string) $ref->getDocComment(), '@editable') === false // legacy annotation support
-			) {
-				throw new \LogicException('Method "' . $setter . '" do not implement #[Editable] attribute or "@editable" annotation.');
+			$isEditable = $ref->getAttributes(Editable::class) !== [];
+			$isEditableByAnnotation = str_contains((string) $ref->getDocComment(), '@editable'); // legacy annotation support
+			if (!$isEditable && !$isEditableByAnnotation) {
+				throw new \LogicException(sprintf('Method "%s" do not implement attribute #[Editable].', $setter));
+			}
+			if ($isEditableByAnnotation) {
+				trigger_error(
+					sprintf(
+						'Annotation "@editable" (in class "%s" and method "%s") is deprecated, please use attribute #[Editable] instead.',
+						$ref->getDeclaringClass()->getName(),
+						$ref->getName(),
+					),
+					E_USER_DEPRECATED,
+				);
 			}
 			$ref->setAccessible(true);
 			$param = $ref->getParameters()[0] ?? null;
