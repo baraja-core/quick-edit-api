@@ -100,7 +100,7 @@ final class QuickEditEndpoint extends BaseEndpoint
 
 	private function getEntityClass(string $name): ClassMetadata
 	{
-		if (\class_exists($name)) {
+		if (class_exists($name)) {
 			$entity = $name;
 		} else {
 			$entity = null;
@@ -108,19 +108,21 @@ final class QuickEditEndpoint extends BaseEndpoint
 			foreach ($this->entityManager->getMetadataFactory()->getAllMetadata() as $meta) {
 				if (strtolower((string) preg_replace('/^.*?([^\\\]+)$/', '$1', $meta->getName())) === $name) {
 					if ($entity !== null) {
-						throw new \InvalidArgumentException(
-							'The name "' . $name . '" is not unambiguous. '
-							. 'Entity "' . $entity . '" and "' . $meta->getName() . '" correspond to this name.',
-						);
+						throw new \InvalidArgumentException(sprintf('The name "%s" is not unambiguous. Entity "%s" and "%s" correspond to this name.', $name, $entity, $meta->getName()));
 					}
 					$entity = $meta->getName();
 				}
 			}
 		}
 		try {
-			return $this->entityManager->getMetadataFactory()->getMetadataFor((string) $entity);
-		} catch (\Throwable) {
-			throw new \InvalidArgumentException('Class "' . $entity . '" is not valid Doctrine entity.');
+			$entityClassString = (string) $entity;
+			if (class_exists($entityClassString) === false) {
+				throw new \LogicException(sprintf('String "%s" is not valid entity name.', $entityClassString));
+			}
+
+			return $this->entityManager->getMetadataFactory()->getMetadataFor($entityClassString);
+		} catch (\Throwable $e) {
+			throw new \InvalidArgumentException(sprintf('Class "%s" is not valid Doctrine entity.', $entityClassString), 500, $e);
 		}
 	}
 
