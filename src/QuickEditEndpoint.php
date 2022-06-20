@@ -140,7 +140,7 @@ final class QuickEditEndpoint extends BaseEndpoint
 	{
 		$type = self::TYPE_MAPPER[$type] ?? 'string';
 		if ($type === 'bool') {
-			return $value === 'true';
+			return $value === 'true' || $value === '1';
 		}
 		if ($type === 'float') {
 			return (float) $value;
