@@ -15,7 +15,7 @@ use Doctrine\Persistence\Mapping\ClassMetadata;
 
 final class QuickEditEndpoint extends BaseEndpoint
 {
-	private const TYPE_MAPPER = [
+	private const TypeMapper = [
 		'text' => 'string',
 		'int' => 'int',
 		'integer' => 'int',
@@ -51,17 +51,19 @@ final class QuickEditEndpoint extends BaseEndpoint
 				->getQuery()
 				->getOneOrNullResult();
 		} catch (NonUniqueResultException) {
-			throw new \InvalidArgumentException('Entity "' . $class . '" with identifier "' . $id . '" is not unique.');
+			throw new \InvalidArgumentException(sprintf('Entity "%s" with identifier "%s" is not unique.', $class, $id));
 		}
 		if ($selectedEntity === null) {
-			throw new \InvalidArgumentException('Entity "' . $class . '" with identifier "' . $id . '" does not exist.');
+			throw new \InvalidArgumentException(sprintf('Entity "%s" with identifier "%s" does not exist.', $class, $id));
 		}
 		$setter = 'set' . $property;
 		if (\method_exists($selectedEntity, $setter) === false) {
-			throw new \InvalidArgumentException(
-				'Entity "' . $class . '" with identifier "' . $id . '" can not be changed, '
-				. 'because setter "' . $setter . '" does not exist.',
-			);
+			throw new \InvalidArgumentException(sprintf(
+				'Entity "%s" with identifier "%s" can not be changed, because setter "%s" does not exist.',
+				$class,
+				$id,
+				$setter,
+			));
 		}
 		$value = $this->valueNormalize($type, $value);
 		try {
@@ -84,25 +86,24 @@ final class QuickEditEndpoint extends BaseEndpoint
 			$ref->setAccessible(true);
 			$param = $ref->getParameters()[0] ?? null;
 			if ($param === null) {
-				throw new \InvalidArgumentException('First input argument for method "' . $setter . '" is required.');
+				throw new \InvalidArgumentException(sprintf('First input argument for method "%s" is required.', $setter));
 			}
 			if (isset($ref->getParameters()[1])) {
-				throw new \InvalidArgumentException('Method "' . $setter . '" implements too many arguments. Did you use one argument only?');
+				throw new \InvalidArgumentException(sprintf('Method "%s" implements too many arguments. Did you use one argument only?', $setter));
 			}
 			(new ServiceMethodInvoker)->invoke($selectedEntity, $setter, [
 				$param->getName() => $value,
 			]);
 		} catch (\Throwable $e) {
 			throw new \InvalidArgumentException(
-				'Value for entity "' . $class . '" with identifier "' . $id . '" '
-				. 'can not be changed: ' . $e->getMessage(),
+				sprintf('Value for entity "%s" with identifier "%s" can not be changed: %s', $class, $id, $e->getMessage()),
 				$e->getCode(),
 				$e,
 			);
 		}
 
 		$this->entityManager->flush();
-		$this->flashMessage('Property "' . $property . '" has been changed.', 'success');
+		$this->flashMessage(sprintf('Property "%s" has been changed.', $property), 'success');
 		$this->sendOk();
 	}
 
@@ -138,9 +139,9 @@ final class QuickEditEndpoint extends BaseEndpoint
 
 	private function valueNormalize(string $type, mixed $value): float|bool|int|string
 	{
-		$type = self::TYPE_MAPPER[$type] ?? 'string';
+		$type = self::TypeMapper[$type] ?? 'string';
 		if ($type === 'bool') {
-			return $value === 'true';
+			return $value === 'true' || $value === '1';
 		}
 		if ($type === 'float') {
 			return (float) $value;
