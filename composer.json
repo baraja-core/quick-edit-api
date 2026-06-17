@@ -12,7 +12,7 @@
 		"php": "^8.0",
 		"doctrine/orm": "^2.7",
 		"doctrine/dbal": "^2.9",
-		"baraja-core/structured-api": "^3.0"
+		"baraja-core/structured-api": "^4.1"
 	},
 	"require-dev": {
 		"phpstan/phpstan": "^1.0",
