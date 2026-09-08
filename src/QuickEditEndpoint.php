@@ -38,11 +38,10 @@ final class QuickEditEndpoint extends BaseEndpoint
 		mixed $value,
 		string $type = 'text',
 	): void {
-		/** @var \Doctrine\ORM\Mapping\ClassMetadata $metadata */
 		$metadata = $this->getEntityClass($entity);
+		assert($metadata instanceof \Doctrine\ORM\Mapping\ClassMetadata);
 		$class = $metadata->getName();
 		try {
-			/** @var object|null $selectedEntity */
 			$selectedEntity = (new EntityRepository($this->entityManager, $metadata))
 				->createQueryBuilder('e')
 				->where('e.id = :id')
